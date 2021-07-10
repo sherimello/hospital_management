@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_projects/classes/TestFetchingModel.dart';
 import 'package:flutter_projects/row1.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert' as cnv;
@@ -6,6 +7,7 @@ import 'classes/Services.dart';
 import 'classes/TypeNameModelForDataFetching.dart';
 import 'classes/Services.dart';
 import 'classes/TypeNameModelForDataFetching.dart';
+import 'dart:html' as html;
 
 class set_test extends StatefulWidget {
   @override
@@ -20,20 +22,15 @@ class _set_testState extends State<set_test> {
   static String selectedLocation;
 
   List<TypeNameModelForDataFetching> model;
+  List<TestFetchingModel> model1;
 
   static const ROOT_FOR_GETTING_TYPE_NAME =
       'http://localhost/second/api/typename/read.php';
+  static const ROOT_FOR_GETTING_TEST =
+      'http://localhost/second/api/typename/read_test.php';
   List<String> _list = new List();
-  int i = 0;
+  int i = 0, length = 0;
   String temp;
-
-  // @override
-  // void setState(fn) {
-  //   setState(() {
-  //     // list = model;
-  //   });
-  //   super.setState(fn);
-  // }
 
   void assign_list() {
     setState(() {
@@ -46,11 +43,21 @@ class _set_testState extends State<set_test> {
   }
 
   @override
+  void setState(fn) {
+    if (model1 != null && done == false) {
+      length = model1.length - 1;
+      done = true;
+    }
+
+    // TODO: implement setState
+    super.setState(fn);
+  }
+
+  @override
   void initState() {
     // TODO: implement initState
     getData();
-    setState(() {});
-
+    getTestData();
     super.initState();
   }
 
@@ -64,18 +71,22 @@ class _set_testState extends State<set_test> {
   }
 
   increment() async {
-    Services.addTest(myController.text, double.parse(myController2.text),
-        selectedLocation);
+    Services.addTest(
+        myController.text, double.parse(myController2.text), selectedLocation);
+
     setState(() {
+      // assign_list();
+      getTestData();
       myController.clear();
       myController2.clear();
-      selectedLocation="";
+      selectedLocation = "";
     });
+    html.window.location.reload();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (model != null) assign_list();
+    if (model != null && _list.length != model.length) assign_list();
     return SingleChildScrollView(
       child: Container(
         color: Colors.white,
@@ -142,7 +153,6 @@ class _set_testState extends State<set_test> {
                           // value: selectedLocation,
                           onChanged: (newValue) {
                             setState(() {
-
                               selectedLocation = newValue;
                             });
                           },
@@ -155,10 +165,14 @@ class _set_testState extends State<set_test> {
                         ),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(27, 8, 8, 8),
-                          child: Text(selectedLocation != null? " : " + selectedLocation : "",
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),),
-                        )
-                        ,
+                          child: Text(
+                            selectedLocation != null
+                                ? " : " + selectedLocation
+                                : "",
+                            style: TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.bold),
+                          ),
+                        ),
                       ],
                     ),
                   )
@@ -174,27 +188,44 @@ class _set_testState extends State<set_test> {
                 child: Text("save"),
               ),
             ),
-            // Table(
-            //   columnWidths: {
-            //     0: FlexColumnWidth(1),
-            //     1: FlexColumnWidth(4),
-            //   },
-            //   border: TableBorder.all(color: Colors.black),
-            //   children: [
-            //     TableRow(children: [row("SL"), row("Type Name")]),
-            //     for (i = 0; i < model.length; i++)
-            //       TableRow(children: [
-            //         Padding(
-            //           padding: const EdgeInsets.all(8.0),
-            //           child: Text(model[i].data[i].sL.toString()),
-            //         ),
-            //         Padding(
-            //           padding: const EdgeInsets.all(8.0),
-            //           child: Text(model[i].data[i].typeName.toString()),
-            //         ),
-            //       ])
-            //   ],
-            // ),
+            model1 != null && model1.length > length
+                ? Table(
+                    columnWidths: {
+                      0: FlexColumnWidth(1),
+                      1: FlexColumnWidth(4),
+                      2: FlexColumnWidth(3),
+                      3: FlexColumnWidth(4),
+                    },
+                    border: TableBorder.all(color: Colors.black),
+                    children: [
+                      TableRow(children: [
+                        row("SL"),
+                        row("Test Name"),
+                        row("Fee"),
+                        row("Type"),
+                      ]),
+                      for (i = 0; i < model1.length; i++)
+                        TableRow(children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(model1[i].data[i].sL.toString()),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(model1[i].data[i].testName.toString()),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(model1[i].data[i].fee.toString()),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(model1[i].data[i].type.toString()),
+                          ),
+                        ])
+                    ],
+                  )
+                : CircularProgressIndicator(),
           ],
         ),
       ),
@@ -214,6 +245,36 @@ class _set_testState extends State<set_test> {
             .toList();
 
         setState(() {});
+      }
+    } catch (e) {
+      print(e.toString());
+    }
+  }
+
+  bool done = false;
+
+  void getTestData() async {
+    try {
+      setState(() {
+        if (done == true) length = model1.length;
+      });
+
+      http.Response response = await http.get(ROOT_FOR_GETTING_TEST);
+      if (response.statusCode == 200) {
+        print(response.body);
+        List<dynamic> body = cnv.jsonDecode(response.body)['data'];
+        // List<TypeNameModelForDataFetching> model1;
+
+        setState(() {
+          model1 = body
+              .map((dynamic item) =>
+                  TestFetchingModel.fromJson(cnv.json.decode(response.body)))
+              .toList();
+          // model1 = model1;
+        });
+        // setState(() {
+        //   done = true;
+        // });
       }
     } catch (e) {
       print(e.toString());

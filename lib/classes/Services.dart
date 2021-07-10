@@ -8,6 +8,8 @@ class Services {
       'http://localhost/second/api/typename/write.php';
   static const ROOT_FOR_ADDING_TEST =
       'http://localhost/second/api/typename/write_test.php';
+  static const ROOT_FOR_ADDING_TEST_PATIENT =
+      'http://localhost/second/api/patient/write_patient_test.php';
   static const ROOT_FOR_GETTING_TYPE_NAME =
       'http://localhost/second/api/typename/read.php';
   static const ROOT_FOR_GETTING_TESTS =
@@ -59,6 +61,33 @@ class Services {
         print(e);
         return "error";
       }
+  }
+
+  static Future<String> addTestPatient(String test, String Name, String DOB, String Mobile, String Date, String Fee) async {
+    // if (testname.isNotEmpty && fee!=null && type.isNotEmpty)
+    try {
+      var map = Map<String, dynamic>();
+
+      map['tableForTest'] = test;
+      map['Name'] = Name;
+      map['DOB'] = DOB;
+      map['Mobile'] = Mobile;
+      map['Date'] = Date;
+      map['Fee'] = Fee;
+      String body = jsonEncode(map);
+      final response = await http.post(ROOT_FOR_ADDING_TEST_PATIENT, body: body);
+
+      if (response.statusCode == 200) {
+        print(response.body);
+        return response.body;
+      } else {
+        print('error');
+        return "error";
+      }
+    } catch (e) {
+      print(e);
+      return "error";
+    }
   }
 
   static Future<List<TypeNameModelForDataFetching>> getData() async {
